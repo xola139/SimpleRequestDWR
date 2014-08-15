@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:aop="http://www.springframework.org/schema/aop" xmlns:dwr="http://www.directwebremoting.org/schema/spring-dwr"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:mvc="http://www.springframework.org/schema/mvc"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+       http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.0.xsd
+       http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-3.0.xsd
+       http://www.directwebremoting.org/schema/spring-dwr http://www.directwebremoting.org/schema/spring-dwr/spring-dwr-3.0.xsd
+        http://www.springframework.org/schema/mvc
+       http://www.springframework.org/schema/mvc/spring-mvc-3.0.xsd">
+
+	<context:component-scan base-package="com.elkardumen.controller" />
+	<mvc:annotation-driven />
+
+	<bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+		<property name="driverClassName" value="oracle.jdbc.driver.OracleDriver" />
+		<property name="url" value="jdbc:oracle:thin:@127.0.0.1:1526:MYDATABASE" />
+		<property name="username" value="usuario" />
+		<property name="password" value="mypass" />
+	</bean>
+
+	<bean id="UsuarioDAO" class="com.elkardumen.dao.impl.UsuarioDAOImpl">
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+
+	<dwr:controller id="dwrController" debug="true">
+		<dwr:config-param name="crossDomainSessionSecurity" value="false" />
+		<dwr:config-param name="activeReverseAjaxEnabled" value="true" />
+		<dwr:config-param name="pollAndCometEnabled" value="true" />
+		<dwr:config-param name="maxWaitAfterWrite" value="-1" />
+	</dwr:controller>
+
+	<bean class="org.springframework.web.servlet.handler.SimpleUrlHandlerMapping">
+		<property value="true" name="alwaysUseFullPath"></property>
+		<property name="mappings">
+			<props>
+				<prop key="/dwr/**/*">dwrController</prop>
+			</props>
+		</property>
+	</bean>
+
+	<bean class="org.springframework.web.servlet.mvc.SimpleControllerHandlerAdapter"></bean>
+	<bean id="handlerMapping" class="org.springframework.web.servlet.handler.BeanNameUrlHandlerMapping" />
+
+	<!--Trae la informacion desde un socket -->
+	<bean id="cargaSoloInformacion" class="com.elkardumen.carga.SolicitarInformacion" scope="application">
+		<dwr:remote javascript="cargaSoloInformacion">
+			<dwr:include method="obtenerCargaInicialInformation" />
+		</dwr:remote>
+	</bean>
+
+
+	<!--Trae la informacion desde un DAO -->
+	<bean id="cargaSoloInformacionDAO" class="com.elkardumen.controller.GetData" scope="application">
+		<dwr:remote javascript="cargaSoloInformacionDAO">
+			<dwr:include method="getListaUsuarios" />
+		</dwr:remote>
+	</bean>
+
+
+	<bean id="jspViewResolver" class="org.springframework.web.servlet.view.UrlBasedViewResolver">
+		<property name="viewClass" value="org.springframework.web.servlet.view.JstlView" />
+		<property name="prefix" value="/pages/" />
+		<property name="suffix" value=".jsp" />
+	</bean>
+</beans>
